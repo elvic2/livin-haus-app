@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Livin Haus - Reportes y Noticias</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="app">
+      <header class="glass-header">
+        <div class="header-container">
+          <div class="logo">
+            <h1>Livin <span>Haus</span></h1>
+            <span class="badge badge-pulse">Resiliente</span>
+          </div>
+          <nav>
+            <button id="nav-home" class="nav-btn active">Inicio / Noticias</button>
+            <button id="nav-search" class="nav-btn primary">Mi Apartamento</button>
+            <button id="nav-admin" class="nav-btn">Mapa (Admin)</button>
+          </nav>
+        </div>
+      </header>
+
+      <main class="main-content">
+        <!-- Home / Dashboard View -->
+        <section id="view-home" class="view active">
+          <div class="hero-section">
+            <h2>Estado Actual del Edificio</h2>
+            <div class="status-card safe">
+              <div class="status-icon">✅</div>
+              <div class="status-info">
+                <h3>Estructura Segura</h3>
+                <p>Según el informe preliminar de Gestión del Riesgo, <strong>la estructura del edificio no presenta amenaza de colapso.</strong></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="dashboard-grid">
+            <!-- News Card -->
+            <article class="card news-card">
+              <div class="card-header">
+                <h3>Últimos Comunicados Oficiales</h3>
+              </div>
+              <div class="card-body">
+                <ul class="news-list">
+                  <li>
+                    <span class="date">14 de Agosto, 2026</span>
+                    <h4>Informe de avances en la gestión del siniestro</h4>
+                    <p>Inspección de Gestión del Riesgo y evaluación por parte del ingeniero estructural Daniel Cardona Gómez.</p>
+                    <a href="/DocsContexto/Informe avances gestión siniestro.pdf" target="_blank" class="download-link">📄 Ver PDF Completo</a>
+                  </li>
+                  <li>
+                    <span class="date">11 de Agosto, 2026</span>
+                    <h4>Consolidado de Afectaciones Internas</h4>
+                    <p>Registro fotográfico inicial de los apartamentos. La información de este PDF ya está precargada en nuestro sistema.</p>
+                    <a href="/DocsContexto/AFECTACIONES INTERNAS LIVIN HAUS.pdf" target="_blank" class="download-link">📄 Ver Consolidado (PDF)</a>
+                  </li>
+                </ul>
+              </div>
+            </article>
+
+            <!-- Search CTA Card -->
+            <article class="card search-cta-card">
+              <div class="card-header">
+                <h3>Verifica tu Inmueble</h3>
+              </div>
+              <div class="card-body text-center">
+                <div class="search-icon-large">🔍</div>
+                <p>Hemos precargado los reportes fotográficos de la administración. Busca tu apartamento para confirmar que tengamos tu información o para reportar daños nuevos.</p>
+                <button id="btn-go-search" class="btn btn-primary btn-full mt-4">Buscar Mi Apartamento</button>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <!-- Search / Check Apartment View -->
+        <section id="view-search" class="view hidden">
+          <div class="form-container">
+            <h2>Consulta de Estado</h2>
+            <p class="subtitle">Selecciona el número de tu apartamento para verificar el estado del reporte.</p>
+            
+            <div class="glass-card p-4 text-center">
+              <div class="form-group mb-0">
+                <select id="search-apartment" class="search-select">
+                  <option value="" disabled selected>Selecciona tu apartamento...</option>
+                  <!-- Populated by JS -->
+                </select>
+              </div>
+            </div>
+
+            <!-- Result: Already Reported -->
+            <div id="result-reported" class="result-card glass-card hidden">
+              <div class="status-badge success">✅ Información Precargada</div>
+              <h3>Registro Encontrado</h3>
+              <p>La administración ya cuenta con el reporte fotográfico y la evidencia de las afectaciones de tu apartamento extraída del informe oficial del 11 de Agosto.</p>
+              
+              <div class="evidence-box">
+                <p class="evidence-text">Tus fotos están documentadas en el <a href="/DocsContexto/AFECTACIONES INTERNAS LIVIN HAUS.pdf" target="_blank">PDF Oficial</a>.</p>
+              </div>
+
+              <div class="mt-4 border-top pt-4">
+                <h4>¿Las grietas empeoraron o tienes nuevos daños?</h4>
+                <button id="btn-update-report" class="btn btn-secondary mt-2">Subir fotos de actualización</button>
+              </div>
+            </div>
+
+            <!-- Result: Pending -->
+            <div id="result-pending" class="result-card glass-card urgent-border hidden">
+              <div class="status-badge warning">⚠️ Acción Requerida</div>
+              <h3>No tenemos tus fotos</h3>
+              <p>Aún está pendiente el registro fotográfico de este apartamento. Por favor reporta tus daños lo antes posible para incluirte en el proceso de la aseguradora.</p>
+              
+              <button id="btn-new-report" class="btn btn-primary btn-full mt-3">Reportar Daños Ahora</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Report Form View -->
+        <section id="view-report" class="view hidden">
+          <div class="form-container">
+            <h2 id="form-title">Reporte de Daños</h2>
+            <p class="subtitle">Sube las fotos y videos correspondientes al apartamento <strong id="form-apt-label"></strong>.</p>
+            
+            <form id="damage-form" class="glass-form">
+              <input type="hidden" id="form-apt-hidden" name="apartment" />
+              
+              <div class="form-group">
+                <label for="description">Descripción Breve del Daño</label>
+                <textarea id="description" name="description" rows="3" placeholder="Ej. Fisura profunda en el muro de la sala, aproximadamente 1 metro de largo." required></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="media">Fotos o Videos</label>
+                <div class="file-drop-area" id="file-drop-area">
+                  <span class="file-icon">📸</span>
+                  <span class="file-msg">Arrastra tus archivos aquí o haz clic para subir</span>
+                  <input type="file" id="media" name="media" multiple accept="image/*,video/*" required>
+                </div>
+                <div id="file-preview" class="file-preview"></div>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-submit">
+                <span>Enviar Información</span>
+                <div class="spinner hidden"></div>
+              </button>
+              <button type="button" id="btn-cancel-report" class="btn btn-secondary mt-2">Cancelar</button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Admin Heatmap View -->
+        <section id="view-admin" class="view hidden">
+          <div class="admin-container">
+            <h2>Mapa de Afectaciones (Admin)</h2>
+            <p class="subtitle">Matriz de estado de recolección de evidencia fotográfica por apartamento.</p>
+            
+            <div class="heatmap-legend">
+              <span class="legend-item"><span class="box green"></span> Con Evidencia (Reportado)</span>
+              <span class="legend-item"><span class="box red"></span> Pendiente (Sin Evidencia)</span>
+            </div>
+
+            <div id="heatmap-grid" class="heatmap-grid glass-card">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Success Modal -->
+        <div id="success-modal" class="modal hidden">
+          <div class="modal-content glass-card">
+            <div class="success-icon">🎉</div>
+            <h3>¡Información Recibida!</h3>
+            <p>Los datos y archivos han sido almacenados correctamente. Gracias por tu colaboración.</p>
+            <button id="btn-close-modal" class="btn btn-secondary">Volver al Inicio</button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
