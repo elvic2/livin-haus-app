@@ -178,22 +178,68 @@ document.addEventListener('DOMContentLoaded', () => {
   const spinner = btnSubmit.querySelector('.spinner');
   const successModal = document.getElementById('success-modal');
 
-  damageForm.addEventListener('submit', (e) => {
+  // URL del Webhook de Google Apps Script (Reemplazar con la URL final)
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlfWBatz2kqPNBLPom8gQwf9PYf6H9bGRLpjIzH2YUDvJezOM0A1mpU0Va217UtQGG/exec"; 
+
+  damageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     btnSubmit.disabled = true;
     btnText.classList.add('hidden');
     spinner.classList.remove('hidden');
 
-    setTimeout(() => {
-      btnSubmit.disabled = false;
-      btnText.classList.remove('hidden');
-      spinner.classList.add('hidden');
-      
+    const formData = new FormData(damageForm);
+    const apartment = formData.get('apartment');
+    const description = formData.get('description');
+    const files = fileInput.files;
+
+    try {
+      if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith("http")) {
+        // Real upload to Google Drive via Apps Script
+        const base64Files = await Promise.all(Array.from(files).map(file => {
+          return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve({
+              name: file.name,
+              type: file.type,
+              base64: e.target.result
+            });
+            reader.readAsDataURL(file);
+          });
+        }));
+
+        const payload = {
+          apartment: apartment,
+          description: description,
+          files: base64Files
+        };
+
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        
+        const result = await response.json();
+        console.log("Upload result:", result);
+      } else {
+        // Simulación (si no hay URL configurada)
+        console.warn("No hay URL de Google Script configurada. Simulando envío...");
+        await new Promise(r => setTimeout(r, 2000));
+      }
+
+      // Success
       damageForm.reset();
       filePreview.innerHTML = '';
       successModal.classList.remove('hidden');
-    }, 2000);
+
+    } catch (error) {
+      console.error("Error enviando el reporte:", error);
+      alert("Hubo un error al enviar el reporte. Por favor intenta de nuevo.");
+    } finally {
+      btnSubmit.disabled = false;
+      btnText.classList.remove('hidden');
+      spinner.classList.add('hidden');
+    }
   });
 
   document.getElementById('btn-close-modal').addEventListener('click', () => {
