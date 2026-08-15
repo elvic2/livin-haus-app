@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const successModal = document.getElementById('success-modal');
 
   // URL del Webhook de Google Apps Script (Reemplazar con la URL final)
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhA6fqjhcHTHaSnM8tmGPTtYqpUj-9cn5_Z6ZdgH76I1Usw4U1R7yTOyYSiswmovfi/exec"; 
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCYrFR_kQR1J5kRT_qjruSVrKudeNeau22Zl91xzfvQc1IJN92Ks_v071ZgMtqvjHI/exec"; 
   
   // Constantes
   const WHATSAPP_NUMBER = "573206733160"; 
