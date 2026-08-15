@@ -106,6 +106,7 @@
               <div class="mt-4 border-top pt-4">
                 <h4>¿Las grietas empeoraron o tienes nuevos daños?</h4>
                 <button id="btn-update-report" class="btn btn-secondary mt-2">Subir fotos de actualización</button>
+                <button id="btn-view-gallery" class="btn btn-primary mt-2">Ver Evidencia Cargada</button>
               </div>
             </div>
 
@@ -169,6 +170,32 @@
             </div>
           </div>
         </section>
+
+        <!-- Gallery Modal -->
+        <div id="gallery-modal" class="modal hidden">
+          <div class="modal-content glass-card" style="max-width: 800px; width: 95%;">
+            <div class="modal-header d-flex justify-content-between align-items-center">
+              <h3 id="gallery-title">Evidencia Apto</h3>
+              <button id="btn-close-gallery" class="btn btn-secondary btn-small">X</button>
+            </div>
+            <div id="gallery-loading" class="text-center p-4">
+              <div class="spinner"></div>
+              <p>Cargando fotos desde Google Drive...</p>
+            </div>
+            <div id="gallery-content" class="hidden">
+              <div class="mb-3 p-3" style="background: rgba(255,255,255,0.1); border-radius: 8px;">
+                <h4>Descripción del Daño:</h4>
+                <p id="gallery-description" style="font-style: italic;"></p>
+              </div>
+              <div id="gallery-images" class="gallery-grid">
+                <!-- Images go here -->
+              </div>
+            </div>
+            <div id="gallery-error" class="hidden text-center p-4" style="color: #ff6b6b;">
+              <p>Error cargando la galería. Es posible que el reporte no tenga fotos o el script de Google esté fallando.</p>
+            </div>
+          </div>
+        </div>
 
         <!-- Success Modal -->
         <div id="success-modal" class="modal hidden">

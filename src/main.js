@@ -95,6 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
     showReportForm(currentSelectedApt);
   });
 
+  document.getElementById('btn-view-gallery').addEventListener('click', () => {
+    openGallery(currentSelectedApt);
+  });
+
   document.getElementById('btn-cancel-report').addEventListener('click', () => {
     showSearch();
   });
@@ -123,6 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const aptBox = document.createElement('div');
         aptBox.className = `apt-box ${isPending(apt) ? 'pending' : 'reported'}`;
         aptBox.textContent = apt;
+        if (!isPending(apt)) {
+          aptBox.addEventListener('click', () => openGallery(apt));
+        }
         aptsContainer.appendChild(aptBox);
       });
       
@@ -246,4 +253,56 @@ document.addEventListener('DOMContentLoaded', () => {
     successModal.classList.add('hidden');
     showSearch();
   });
+
+  // Gallery Logic
+  const galleryModal = document.getElementById('gallery-modal');
+  const galleryTitle = document.getElementById('gallery-title');
+  const galleryLoading = document.getElementById('gallery-loading');
+  const galleryContent = document.getElementById('gallery-content');
+  const galleryError = document.getElementById('gallery-error');
+  const galleryDescription = document.getElementById('gallery-description');
+  const galleryImages = document.getElementById('gallery-images');
+
+  document.getElementById('btn-close-gallery').addEventListener('click', () => {
+    galleryModal.classList.add('hidden');
+  });
+
+  async function openGallery(apt) {
+    galleryModal.classList.remove('hidden');
+    galleryTitle.textContent = `Evidencia Apto ${apt}`;
+    galleryLoading.classList.remove('hidden');
+    galleryContent.classList.add('hidden');
+    galleryError.classList.add('hidden');
+    galleryImages.innerHTML = '';
+    galleryDescription.textContent = '';
+
+    try {
+      // Usar la URL GET configurada para obtener datos
+      const response = await fetch(`${GOOGLE_SCRIPT_URL}?apt=${apt}`);
+      const data = await response.json();
+      
+      if (data.status === 'success' && data.reports.length > 0) {
+        // Tomar el reporte más reciente
+        const latestReport = data.reports[0];
+        galleryDescription.textContent = latestReport.description;
+        
+        latestReport.photos.forEach(photo => {
+          const img = document.createElement('img');
+          img.src = photo.url;
+          img.alt = photo.name;
+          galleryImages.appendChild(img);
+        });
+        
+        galleryLoading.classList.add('hidden');
+        galleryContent.classList.remove('hidden');
+      } else {
+        throw new Error('No reports found');
+      }
+    } catch (error) {
+      console.error(error);
+      galleryLoading.classList.add('hidden');
+      galleryError.classList.remove('hidden');
+    }
+  }
+
 });
