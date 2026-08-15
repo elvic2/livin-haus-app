@@ -203,8 +203,40 @@ document.addEventListener('DOMContentLoaded', () => {
     updateFilePreview(dt.files);
   });
 
-  fileInput.addEventListener('change', (e) => {
-    updateFilePreview(e.target.files);
+  fileInput.addEventListener('change', () => {
+    filePreview.innerHTML = '';
+    
+    // Validación en el cliente (WhatsApp Fallback)
+    let videoSize = 0;
+    let hasLargeVideo = false;
+    Array.from(fileInput.files).forEach(f => {
+      if (!f.type.startsWith('image/')) {
+        videoSize += f.size;
+        if (f.size > 15 * 1024 * 1024) hasLargeVideo = true;
+      }
+    });
+
+    if (videoSize > 15 * 1024 * 1024 || hasLargeVideo) {
+      document.getElementById('submit-actions').classList.add('hidden');
+      const waFallback = document.getElementById('whatsapp-fallback');
+      waFallback.classList.remove('hidden');
+      
+      const apt = document.getElementById('form-apt-hidden').value;
+      const desc = document.getElementById('description').value;
+      const text = encodeURIComponent(`Hola, soy del Apto ${apt}. Adjunto evidencia de daños:\n\n${desc}`);
+      document.getElementById('btn-whatsapp').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
+    } else {
+      document.getElementById('submit-actions').classList.remove('hidden');
+      document.getElementById('whatsapp-fallback').classList.add('hidden');
+    }
+
+    Array.from(fileInput.files).forEach(file => {
+      const el = document.createElement('div');
+      el.className = 'file-preview-item';
+      const icon = file.type.startsWith('video') ? '🎥' : '🖼️';
+      el.innerHTML = `<span>${icon}</span> <span>${file.name}</span>`;
+      filePreview.appendChild(el);
+    });
   });
 
   function updateFilePreview(files) {
@@ -227,6 +259,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // URL del Webhook de Google Apps Script (Reemplazar con la URL final)
   const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhA6fqjhcHTHaSnM8tmGPTtYqpUj-9cn5_Z6ZdgH76I1Usw4U1R7yTOyYSiswmovfi/exec"; 
+  
+  // Constantes
+  const WHATSAPP_NUMBER = "573206733160"; 
 
   // Función para comprimir imágenes
   function compressImage(file, maxWidth = 1280, quality = 0.7) {
@@ -269,28 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const apartment = formData.get('apartment');
     const description = formData.get('description');
     const files = fileInput.files;
-
-    // Validación de tamaño (WhatsApp Fallback)
-    let totalSize = 0;
-    let hasLargeVideo = false;
-    Array.from(files).forEach(f => {
-      totalSize += f.size;
-      if (f.size > 15 * 1024 * 1024) hasLargeVideo = true;
-    });
-
-    if (totalSize > 20 * 1024 * 1024 || hasLargeVideo) {
-      document.getElementById('submit-actions').classList.add('hidden');
-      const waFallback = document.getElementById('whatsapp-fallback');
-      waFallback.classList.remove('hidden');
-      
-      const text = encodeURIComponent(`Hola, soy del Apto ${apartment}. Adjunto evidencia de daños:\n\n${description}`);
-      document.getElementById('btn-whatsapp').href = `https://wa.me/573206733160?text=${text}`;
-      
-      btnSubmit.disabled = false;
-      btnText.classList.remove('hidden');
-      spinner.classList.add('hidden');
-      return; // Detener envío
-    }
 
     try {
       if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith("http")) {
@@ -352,7 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
       waFallback.querySelector('h4').textContent = "Hubo un error al enviar (Posible falla de red)";
       
       const text = encodeURIComponent(`Hola, soy del Apto ${apartment}. Intenté subir evidencia por la web pero falló. Adjunto evidencia de daños:\n\n${description}`);
-      document.getElementById('btn-whatsapp').href = `https://wa.me/573206733160?text=${text}`;
+      document.getElementById('btn-whatsapp').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`;
     } finally {
       btnSubmit.disabled = false;
       btnText.classList.remove('hidden');
