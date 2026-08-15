@@ -384,6 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const galleryLoading = document.getElementById('gallery-loading');
   const galleryContent = document.getElementById('gallery-content');
   const galleryError = document.getElementById('gallery-error');
+  const galleryInfo = document.getElementById('gallery-info');
+  const galleryInfoText = document.getElementById('gallery-info-text');
   const galleryDescription = document.getElementById('gallery-description');
   const galleryImages = document.getElementById('gallery-images');
 
@@ -397,6 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     galleryLoading.classList.remove('hidden');
     galleryContent.classList.add('hidden');
     galleryError.classList.add('hidden');
+    galleryInfo.classList.add('hidden');
     galleryImages.innerHTML = '';
     galleryDescription.textContent = '';
 
@@ -405,26 +408,39 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(`${GOOGLE_SCRIPT_URL}?apt=${apt}`);
       const data = await response.json();
       
-      if (data.status === 'success' && data.reports.length > 0) {
-        // Tomar el reporte más reciente
-        const latestReport = data.reports[0];
-        galleryDescription.textContent = latestReport.description;
-        
-        latestReport.photos.forEach(photo => {
-          const img = document.createElement('img');
-          img.src = photo.url;
-          img.alt = photo.name;
-          galleryImages.appendChild(img);
-        });
-        
-        galleryLoading.classList.add('hidden');
-        galleryContent.classList.remove('hidden');
+      if (data.status === 'success') {
+        if (data.reports.length > 0) {
+          // Tomar el reporte más reciente
+          const latestReport = data.reports[0];
+          galleryDescription.textContent = latestReport.description;
+          
+          latestReport.photos.forEach(photo => {
+            const img = document.createElement('img');
+            img.src = photo.url;
+            img.alt = photo.name;
+            galleryImages.appendChild(img);
+          });
+          
+          galleryLoading.classList.add('hidden');
+          galleryContent.classList.remove('hidden');
+        } else {
+          // No hay fotos en Drive
+          galleryLoading.classList.add('hidden');
+          galleryInfo.classList.remove('hidden');
+          
+          if (!isPending(apt)) {
+            galleryInfoText.textContent = `El apartamento ${apt} fue reportado en el censo físico original, pero no se ha cargado nueva evidencia digital. Si lo deseas, puedes reportar daños adicionales usando el buscador principal.`;
+          } else {
+            galleryInfoText.textContent = `Aún no hay evidencia para el apartamento ${apt}. Por favor, realiza tu reporte de daños lo antes posible.`;
+          }
+        }
       } else {
-        throw new Error('No reports found');
+        throw new Error('Script returned error status');
       }
     } catch (error) {
       console.error(error);
       galleryLoading.classList.add('hidden');
+      document.getElementById('gallery-error-text').textContent = "Error cargando la galería. Es posible que el script de Google esté fallando o no tengas conexión a internet.";
       galleryError.classList.remove('hidden');
     }
   }
