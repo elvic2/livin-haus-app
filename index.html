@@ -145,11 +145,19 @@
                 <div id="file-preview" class="file-preview"></div>
               </div>
 
-              <button type="submit" class="btn btn-primary btn-submit">
-                <span>Enviar Información</span>
-                <div class="spinner hidden"></div>
-              </button>
-              <button type="button" id="btn-cancel-report" class="btn btn-secondary mt-2">Cancelar</button>
+              <div id="submit-actions">
+                <button type="submit" class="btn btn-primary btn-submit btn-full">
+                  <span>Enviar Información</span>
+                  <div class="spinner hidden"></div>
+                </button>
+                <button type="button" id="btn-cancel-report" class="btn btn-secondary btn-full mt-2">Cancelar</button>
+              </div>
+              
+              <div id="whatsapp-fallback" class="hidden mt-4 p-3 text-center" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
+                <h4 style="color: #fca5a5; margin-bottom: 0.5rem;">Problemas detectados (Red o Video muy pesado)</h4>
+                <p style="font-size: 0.9rem; margin-bottom: 1rem;">Hemos guardado el borrador de tu descripción. Por favor, envía tus videos o fotos por WhatsApp a la administración para no perder la evidencia.</p>
+                <a id="btn-whatsapp" href="#" target="_blank" class="btn btn-full" style="background: #25D366; color: white;">Enviar por WhatsApp</a>
+              </div>
             </form>
           </div>
         </section>
@@ -203,6 +211,10 @@
             <div class="success-icon">🎉</div>
             <h3>¡Información Recibida!</h3>
             <p>Los datos y archivos han sido almacenados correctamente. Gracias por tu colaboración.</p>
+            <div class="mb-4 p-3" style="background: rgba(255,255,255,0.1); border-radius: 8px;">
+              <small style="color: var(--text-muted); display: block; margin-bottom: 5px;">Tu código de referencia es:</small>
+              <strong id="success-ref-code" style="font-size: 1.25rem; letter-spacing: 2px;">LH-XXX-XXXX</strong>
+            </div>
             <button id="btn-close-modal" class="btn btn-secondary">Volver al Inicio</button>
           </div>
         </div>

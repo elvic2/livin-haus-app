@@ -48,6 +48,19 @@ document.addEventListener('DOMContentLoaded', () => {
     viewReport.classList.remove('hidden');
     document.getElementById('form-apt-label').textContent = apt;
     document.getElementById('form-apt-hidden').value = apt;
+    
+    const draft = localStorage.getItem(`draft_${apt}`);
+    if (draft) {
+      document.getElementById('description').value = draft;
+    } else {
+      document.getElementById('description').value = '';
+    }
+    
+    // Resetear fallbacks y botones
+    document.getElementById('submit-actions').classList.remove('hidden');
+    document.getElementById('whatsapp-fallback').classList.add('hidden');
+    document.getElementById('file-preview').innerHTML = '';
+    document.getElementById('media').value = '';
   }
 
   navHome.addEventListener('click', showHome);
@@ -55,6 +68,14 @@ document.addEventListener('DOMContentLoaded', () => {
   navAdmin.addEventListener('click', showAdmin);
   
   document.getElementById('btn-go-search').addEventListener('click', showSearch);
+
+  // Guardar borrador automáticamente
+  document.getElementById('description').addEventListener('input', (e) => {
+    const apt = document.getElementById('form-apt-hidden').value;
+    if (apt) {
+      localStorage.setItem(`draft_${apt}`, e.target.value);
+    }
+  });
 
   // Populate Search Select
   const searchSelect = document.getElementById('search-apartment');
@@ -104,8 +125,22 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Admin Heatmap
-  function renderHeatmap() {
+  async function renderHeatmap() {
     const grid = document.getElementById('heatmap-grid');
+    grid.innerHTML = '<div style="text-align:center; padding:2rem;"><div class="spinner" style="display:inline-block; border-color:var(--text-muted); border-top-color:var(--primary-color);"></div><p>Sincronizando reportes en vivo...</p></div>';
+    
+    // Fetch data en vivo
+    let liveReported = [];
+    try {
+      const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=list`);
+      const data = await res.json();
+      if (data.status === 'success') {
+        liveReported = data.reported;
+      }
+    } catch (e) {
+      console.warn("Fallo al obtener datos en vivo:", e);
+    }
+
     grid.innerHTML = '';
     
     // Reverse floors to show 10 at top, 2 at bottom
@@ -124,12 +159,17 @@ document.addEventListener('DOMContentLoaded', () => {
       aptsContainer.className = 'apts-container';
       
       buildingStructure[floor].forEach(apt => {
+        // Un apartamento está reportado si está en el PDF (estático) o si Google nos dice que está en vivo
+        const isReportedStatus = !isPending(apt) || liveReported.includes(String(apt));
+        
         const aptBox = document.createElement('div');
-        aptBox.className = `apt-box ${isPending(apt) ? 'pending' : 'reported'}`;
+        aptBox.className = `apt-box ${isReportedStatus ? 'reported' : 'pending'}`;
         aptBox.textContent = apt;
-        if (!isPending(apt)) {
+        
+        if (isReportedStatus) {
           aptBox.addEventListener('click', () => openGallery(apt));
         }
+        
         aptsContainer.appendChild(aptBox);
       });
       
@@ -188,6 +228,36 @@ document.addEventListener('DOMContentLoaded', () => {
   // URL del Webhook de Google Apps Script (Reemplazar con la URL final)
   const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlfWBatz2kqPNBLPom8gQwf9PYf6H9bGRLpjIzH2YUDvJezOM0A1mpU0Va217UtQGG/exec"; 
 
+  // Función para comprimir imágenes
+  function compressImage(file, maxWidth = 1280, quality = 0.7) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve({
+            name: file.name,
+            type: 'image/jpeg',
+            base64: canvas.toDataURL('image/jpeg', quality)
+          });
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   damageForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -200,10 +270,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const description = formData.get('description');
     const files = fileInput.files;
 
+    // Validación de tamaño (WhatsApp Fallback)
+    let totalSize = 0;
+    let hasLargeVideo = false;
+    Array.from(files).forEach(f => {
+      totalSize += f.size;
+      if (f.size > 15 * 1024 * 1024) hasLargeVideo = true;
+    });
+
+    if (totalSize > 20 * 1024 * 1024 || hasLargeVideo) {
+      document.getElementById('submit-actions').classList.add('hidden');
+      const waFallback = document.getElementById('whatsapp-fallback');
+      waFallback.classList.remove('hidden');
+      
+      const text = encodeURIComponent(`Hola, soy del Apto ${apartment}. Adjunto evidencia de daños:\n\n${description}`);
+      document.getElementById('btn-whatsapp').href = `https://wa.me/573206733160?text=${text}`;
+      
+      btnSubmit.disabled = false;
+      btnText.classList.remove('hidden');
+      spinner.classList.add('hidden');
+      return; // Detener envío
+    }
+
     try {
       if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.startsWith("http")) {
-        // Real upload to Google Drive via Apps Script
-        const base64Files = await Promise.all(Array.from(files).map(file => {
+        const base64Files = await Promise.all(Array.from(files).map(async file => {
+          if (file.type.startsWith('image/')) {
+            return await compressImage(file, 1280, 0.7);
+          }
           return new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => resolve({
@@ -226,22 +320,39 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify(payload)
         });
         
+        if (!response.ok) {
+          throw new Error(`HTTP Error: ${response.status}`);
+        }
+        
         const result = await response.json();
+        if (result.status !== 'success') {
+          throw new Error(`Server Error: ${result.message || 'Unknown'}`);
+        }
+        
+        if (result.referenceCode) {
+          document.getElementById('success-ref-code').textContent = result.referenceCode;
+        }
         console.log("Upload result:", result);
       } else {
-        // Simulación (si no hay URL configurada)
         console.warn("No hay URL de Google Script configurada. Simulando envío...");
         await new Promise(r => setTimeout(r, 2000));
       }
 
       // Success
+      localStorage.removeItem(`draft_${apartment}`);
       damageForm.reset();
       filePreview.innerHTML = '';
       successModal.classList.remove('hidden');
 
     } catch (error) {
       console.error("Error enviando el reporte:", error);
-      alert("Hubo un error al enviar el reporte. Por favor intenta de nuevo.");
+      document.getElementById('submit-actions').classList.add('hidden');
+      const waFallback = document.getElementById('whatsapp-fallback');
+      waFallback.classList.remove('hidden');
+      waFallback.querySelector('h4').textContent = "Hubo un error al enviar (Posible falla de red)";
+      
+      const text = encodeURIComponent(`Hola, soy del Apto ${apartment}. Intenté subir evidencia por la web pero falló. Adjunto evidencia de daños:\n\n${description}`);
+      document.getElementById('btn-whatsapp').href = `https://wa.me/573206733160?text=${text}`;
     } finally {
       btnSubmit.disabled = false;
       btnText.classList.remove('hidden');
