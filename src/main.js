@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const successModal = document.getElementById('success-modal');
 
   // URL del Webhook de Google Apps Script (Reemplazar con la URL final)
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwlfWBatz2kqPNBLPom8gQwf9PYf6H9bGRLpjIzH2YUDvJezOM0A1mpU0Va217UtQGG/exec"; 
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhA6fqjhcHTHaSnM8tmGPTtYqpUj-9cn5_Z6ZdgH76I1Usw4U1R7yTOyYSiswmovfi/exec"; 
 
   // Función para comprimir imágenes
   function compressImage(file, maxWidth = 1280, quality = 0.7) {
